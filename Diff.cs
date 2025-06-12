@@ -13,6 +13,7 @@ namespace my.utils
     /// Algorithmica Vol. 1 No. 2, 1986, p 251.
     /// 
     /// See [documentation](docu.md) for more details and change log.
+    /// </summary>
 
     public class Diff
     {
@@ -28,7 +29,7 @@ namespace my.utils
             public int deletedA;
             /// <summary>Number of changes in Data B.</summary>
             public int insertedB;
-        } // Item
+        }
 
         /// <summary>
         /// Shortest Middle Snake Return Data
@@ -49,7 +50,7 @@ namespace my.utils
         public Item[] DiffText(string TextA, string TextB)
         {
             return (DiffText(TextA, TextB, false, false, false));
-        } // DiffText
+        }
 
 
         /// <summary>
@@ -67,22 +68,13 @@ namespace my.utils
         /// <returns>Returns a array of Items that describe the differences.</returns>
         public static Item[] DiffText(string TextA, string TextB, bool trimSpace, bool ignoreSpace, bool ignoreCase)
         {
-            // prepare the input-text and convert to comparable numbers.
             Hashtable h = new Hashtable(TextA.Length + TextB.Length);
-
-            // The A-Version of the data (original data) to be compared.
             DiffData DataA = new DiffData(DiffCodes(TextA, h, trimSpace, ignoreSpace, ignoreCase));
-
-            // The B-Version of the data (modified data) to be compared.
             DiffData DataB = new DiffData(DiffCodes(TextB, h, trimSpace, ignoreSpace, ignoreCase));
-
-            // free up hashtable memory (maybe)
             h.Clear();
 
             int MAX = DataA.Length + DataB.Length + 1;
-            /// vector for the (0,0) to (x,y) search
             int[] DownVector = new int[2 * MAX + 2];
-            /// vector for the (u,v) to (N,M) search
             int[] UpVector = new int[2 * MAX + 2];
 
             LCS(DataA, 0, DataA.Length, DataB, 0, DataB.Length, DownVector, UpVector);
@@ -90,7 +82,7 @@ namespace my.utils
             Optimize(DataA);
             Optimize(DataB);
             return CreateDiffs(DataA, DataB);
-        } // DiffText
+        }
 
 
         /// <summary>
@@ -121,9 +113,9 @@ namespace my.utils
                 else
                 {
                     StartPos = EndPos;
-                } // if
-            } // while
-        } // Optimize
+                }
+            }
+        }
 
 
         /// <summary>
@@ -134,21 +126,16 @@ namespace my.utils
         /// <returns>Returns a array of Items that describe the differences.</returns>
         public static Item[] DiffInt(int[] ArrayA, int[] ArrayB)
         {
-            // The A-Version of the data (original data) to be compared.
             DiffData DataA = new DiffData(ArrayA);
-
-            // The B-Version of the data (modified data) to be compared.
             DiffData DataB = new DiffData(ArrayB);
 
             int MAX = DataA.Length + DataB.Length + 1;
-            /// vector for the (0,0) to (x,y) search
             int[] DownVector = new int[2 * MAX + 2];
-            /// vector for the (u,v) to (N,M) search
             int[] UpVector = new int[2 * MAX + 2];
 
             LCS(DataA, 0, DataA.Length, DataB, 0, DataB.Length, DownVector, UpVector);
             return CreateDiffs(DataA, DataB);
-        } // Diff
+        }
 
 
         /// <summary>
@@ -180,7 +167,7 @@ namespace my.utils
                     s = s.Trim();
 
                 if (ignoreSpace)
-                    s = Regex.Replace(s, "\\s+", " ");            // TODO: optimization: faster blank removal.
+                    s = Regex.Replace(s, "\\s+", " ");    // TODO: optimization: faster blank removal.
 
                 if (ignoreCase)
                     s = s.ToLower();
@@ -194,10 +181,10 @@ namespace my.utils
                 else
                 {
                     Codes[i] = (int)(h[s]!);
-                } // if
-            } // for
+                }
+            }
             return (Codes);
-        } // DiffCodes
+        }
 
 
         /// <summary>
@@ -234,7 +221,6 @@ namespace my.utils
 
             // Debug.Write(2, "SMS", String.Format("Search the box: A[{0}-{1}] to B[{2}-{3}]", LowerA, UpperA, LowerB, UpperB));
 
-            // init vectors
             DownVector[DownOffset + DownK + 1] = LowerA;
             UpVector[UpOffset + UpK - 1] = UpperA;
 
@@ -277,9 +263,9 @@ namespace my.utils
                             // ret.u = UpVector[UpOffset + k];      // 2002.09.20: no need for 2 points 
                             // ret.v = UpVector[UpOffset + k] - k;
                             return (ret);
-                        } // if
-                    } // if
-                } // for k
+                        }
+                    }
+                }
 
                 // Extend the reverse path.
                 for (int k = UpK - D; k <= UpK + D; k += 2)
@@ -297,13 +283,13 @@ namespace my.utils
                         x = UpVector[UpOffset + k + 1] - 1; // left
                         if ((k > UpK - D) && (UpVector[UpOffset + k - 1] < x))
                             x = UpVector[UpOffset + k - 1]; // up
-                    } // if
+                    }
                     y = x - k;
 
                     while ((x > LowerA) && (y > LowerB) && (DataA.data[x - 1] == DataB.data[y - 1]))
                     {
                         x--;
-                        y--; // diagonal
+                        y--;
                     }
                     UpVector[UpOffset + k] = x;
 
@@ -317,13 +303,13 @@ namespace my.utils
                             // ret.u = UpVector[UpOffset + k];     // 2002.09.20: no need for 2 points 
                             // ret.v = UpVector[UpOffset + k] - k;
                             return (ret);
-                        } // if
-                    } // if
-                } // for k
-            } // for D
+                        }
+                    }
+                }
+            }
 
             throw new System.ApplicationException("the algorithm should never come here.");
-        } // SMS
+        }
 
 
         /// <summary>
@@ -380,13 +366,13 @@ namespace my.utils
                 LCS(DataA, LowerA, smsrd.x, DataB, LowerB, smsrd.y, DownVector, UpVector);
                 LCS(DataA, smsrd.x, UpperA, DataB, smsrd.y, UpperB, DownVector, UpVector);  // 2002.09.20: no need for 2 points 
             }
-        } // LCS()
+        }
 
 
         /// <summary>Scan the tables of which lines are inserted and deleted,
         /// producing an edit script in forward order.  
         /// </summary>
-        /// dynamic array
+        // dynamic array
         private static Item[] CreateDiffs(DiffData DataA, DiffData DataB)
         {
             ArrayList a = new ArrayList();
@@ -413,12 +399,12 @@ namespace my.utils
                     StartA = LineA;
                     StartB = LineB;
 
+                    // while (LineA < DataA.Length && DataA.modified[LineA])
                     while (LineA < DataA.Length && (LineB >= DataB.Length || DataA.modified[LineA]))
-                        // while (LineA < DataA.Length && DataA.modified[LineA])
                         LineA++;
 
+                    // while (LineB < DataB.Length && DataB.modified[LineB])
                     while (LineB < DataB.Length && (LineA >= DataA.Length || DataB.modified[LineB]))
-                        // while (LineB < DataB.Length && DataB.modified[LineB])
                         LineB++;
 
                     if ((StartA < LineA) || (StartB < LineB))
@@ -430,9 +416,9 @@ namespace my.utils
                         aItem.deletedA = LineA - StartA;
                         aItem.insertedB = LineB - StartB;
                         a.Add(aItem);
-                    } // if
-                } // if
-            } // while
+                    }
+                }
+            }
 
             result = new Item[a.Count];
             a.CopyTo(result);
@@ -440,7 +426,7 @@ namespace my.utils
             return (result);
         }
 
-    } // class Diff
+    }
 
     /// <summary>Data on one input file being compared.  
     /// </summary>
@@ -468,6 +454,6 @@ namespace my.utils
             data = initData;
             Length = initData.Length;
             modified = new bool[Length + 2];
-        } // DiffData
-    } // class DiffData
-} // namespace
+        }
+    }
+}
