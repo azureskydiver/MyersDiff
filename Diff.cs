@@ -37,7 +37,7 @@ namespace my.Utilities.Diff
         /// <param name="textA">A-version of the text (usually the old one)</param>
         /// <param name="textB">B-version of the text (usually the new one)</param>
         /// <returns>Returns a array of Items that describe the differences.</returns>
-        public Item[] DiffText(string textA, string textB)
+        public IEnumerable<Item> DiffText(string textA, string textB)
             => DiffText(textA, textB, false, false, false);
 
         /// <summary>
@@ -53,7 +53,7 @@ namespace my.Utilities.Diff
         /// <param name="ignoreSpace">When set to true, all whitespace characters are converted to a single space character before the comparision is done.</param>
         /// <param name="ignoreCase">When set to true, all characters are converted to their lowercase equivalence before the comparision is done.</param>
         /// <returns>Returns a array of Items that describe the differences.</returns>
-        public static Item[] DiffText(string textA, string textB, bool trimSpace, bool ignoreSpace, bool ignoreCase)
+        public static IEnumerable<Item> DiffText(string textA, string textB, bool trimSpace, bool ignoreSpace, bool ignoreCase)
         {
             var h = new Hashtable(textA.Length + textB.Length);
             var dataA = new DiffData(DiffCodes(textA, h, trimSpace, ignoreSpace, ignoreCase));
@@ -109,7 +109,7 @@ namespace my.Utilities.Diff
         /// <param name="arrayA">A-version of the numbers (usually the old one)</param>
         /// <param name="arrayB">B-version of the numbers (usually the new one)</param>
         /// <returns>Returns a array of Items that describe the differences.</returns>
-        public static Item[] DiffInt(int[] arrayA, int[] arrayB)
+        public static IEnumerable<Item> DiffInt(int[] arrayA, int[] arrayB)
         {
             var dataA = new DiffData(arrayA);
             var dataB = new DiffData(arrayB);
@@ -353,9 +353,8 @@ namespace my.Utilities.Diff
         /// producing an edit script in forward order.  
         /// </summary>
         // dynamic array
-        private static Item[] CreateDiffs(DiffData dataA, DiffData dataB)
+        private static IEnumerable<Item> CreateDiffs(DiffData dataA, DiffData dataB)
         {
-            ArrayList a = new ArrayList();
             int lineA = 0;
             int lineB = 0;
             while (lineA < dataA.Length || lineB < dataB.Length)
@@ -383,20 +382,16 @@ namespace my.Utilities.Diff
 
                     if ((startA < lineA) || (startB < lineB))
                     {
-                        // store a new difference-item
-                        var aItem = new Item();
-                        aItem.StartLineA = startA;
-                        aItem.StartLineB = startB;
-                        aItem.DeletedACount = lineA - startA;
-                        aItem.DeletedBCount = lineB - startB;
-                        a.Add(aItem);
+                        yield return new Item()
+                        {
+                            StartLineA = startA,
+                            StartLineB = startB,
+                            DeletedACount = lineA - startA,
+                            DeletedBCount = lineB - startB,
+                        };
                     }
                 }
             }
-
-            var result = new Item[a.Count];
-            a.CopyTo(result);
-            return result;
         }
     }
 

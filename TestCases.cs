@@ -19,11 +19,11 @@ void TestHelper(string testName, string a, string b, string expect)
         Console.WriteLine($"  b={b}");
     }
 
-    Diff.Item[] f = Diff.DiffText(a.Replace(',', '\n'), b.Replace(',', '\n'), false, false, false);
+    var f = Diff.DiffText(a.Replace(',', '\n'), b.Replace(',', '\n'), false, false, false);
 
     StringBuilder ret = new StringBuilder();
-    for (int n = 0; n < f.Length; n++)
-        ret.Append($"{f[n].DeletedACount}.{f[n].DeletedBCount}.{f[n].StartLineA}.{f[n].StartLineB}*");
+    foreach(var item in f)
+        ret.Append($"{item.DeletedACount}.{item.DeletedBCount}.{item.StartLineA}.{item.StartLineB}*");
 
     if (verboseMode)
         Console.WriteLine($"  result={ret}");
