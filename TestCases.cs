@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Text;
-using my.utils;
+using my.Utilities.Diff;
 
 
 // flags from the command line
@@ -23,7 +23,7 @@ void TestHelper(string testName, string a, string b, string expect)
 
     StringBuilder ret = new StringBuilder();
     for (int n = 0; n < f.Length; n++)
-        ret.Append(f[n].deletedA.ToString() + "." + f[n].insertedB.ToString() + "." + f[n].StartA.ToString() + "." + f[n].StartB.ToString() + "*");
+        ret.Append(f[n].DeletedACount.ToString() + "." + f[n].DeletedBCount.ToString() + "." + f[n].StartLineA.ToString() + "." + f[n].StartLineB.ToString() + "*");
 
     if (verboseMode)
         Console.WriteLine($"  result={ret}");
