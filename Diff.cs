@@ -51,19 +51,21 @@ namespace my.Utilities.Diff
         public static IEnumerable<Item> DiffText(string textA, string textB, bool trimSpace, bool ignoreSpace, bool ignoreCase)
         {
             var h = new Dictionary<string, int>(textA.Length + textB.Length);
-            var dataA = new DiffData(DiffCodes(textA, h, trimSpace, ignoreSpace, ignoreCase));
-            var dataB = new DiffData(DiffCodes(textB, h, trimSpace, ignoreSpace, ignoreCase));
+            var dataA = DiffCodes(textA, h, trimSpace, ignoreSpace, ignoreCase);
+            var modifiedA = new bool[dataA.Length + 2];
+            var dataB = DiffCodes(textB, h, trimSpace, ignoreSpace, ignoreCase);
+            var modifiedB = new bool[dataB.Length + 2];
             h.Clear();
 
             int max = dataA.Length + dataB.Length + 1;
             var downVector = new int[2 * max + 2];
             var upVector = new int[2 * max + 2];
 
-            LCS(dataA, 0, dataA.Length, dataB, 0, dataB.Length, downVector, upVector);
+            LCS(dataA, 0, dataA.Length, modifiedA, dataB, 0, dataB.Length, modifiedB, downVector, upVector);
 
-            Optimize(dataA);
-            Optimize(dataB);
-            return CreateDiffs(dataA, dataB);
+            Optimize(dataA, modifiedA);
+            Optimize(dataB, modifiedB);
+            return CreateDiffs(dataA, modifiedA, dataB, modifiedB);
         }
 
         /// <summary>
@@ -73,23 +75,23 @@ namespace my.Utilities.Diff
         /// This leads to more readable diff sequences when comparing text files.
         /// </summary>
         /// <param name="data">A Diff data buffer containing the identified changes.</param>
-        static void Optimize(DiffData data)
+        static void Optimize(int[] data, bool [] modified)
         {
             int startPos, endPos;
 
             startPos = 0;
             while (startPos < data.Length)
             {
-                while ((startPos < data.Length) && (data.Modified[startPos] == false))
+                while ((startPos < data.Length) && (modified[startPos] == false))
                     startPos++;
                 endPos = startPos;
-                while ((endPos < data.Length) && (data.Modified[endPos] == true))
+                while ((endPos < data.Length) && (modified[endPos] == true))
                     endPos++;
 
-                if ((endPos < data.Length) && (data.Data[startPos] == data.Data[endPos]))
+                if ((endPos < data.Length) && (data[startPos] == data[endPos]))
                 {
-                    data.Modified[startPos] = false;
-                    data.Modified[endPos] = true;
+                    modified[startPos] = false;
+                    modified[endPos] = true;
                 }
                 else
                 {
@@ -103,18 +105,18 @@ namespace my.Utilities.Diff
         /// </summary>
         /// <param name="arrayA">A-version of the numbers (usually the old one)</param>
         /// <param name="arrayB">B-version of the numbers (usually the new one)</param>
-        /// <returns>Returns a array of Items that describe the differences.</returns>
-        public static IEnumerable<Item> DiffInt(int[] arrayA, int[] arrayB)
+        /// <returns>Returns Items that describe the differences.</returns>
+        public static IEnumerable<Item> DiffInt(int[] dataA, int[] dataB)
         {
-            var dataA = new DiffData(arrayA);
-            var dataB = new DiffData(arrayB);
-
+            var modifiedA = new bool[dataA.Length + 2];
+            var modifiedB = new bool[dataB.Length + 2];
+ 
             int max = dataA.Length + dataB.Length + 1;
             var downVector = new int[2 * max + 2];
             var upVector = new int[2 * max + 2];
 
-            LCS(dataA, 0, dataA.Length, dataB, 0, dataB.Length, downVector, upVector);
-            return CreateDiffs(dataA, dataB);
+            LCS(dataA, 0, dataA.Length, modifiedA, dataB, 0, dataB.Length, modifiedB, downVector, upVector);
+            return CreateDiffs(dataA, modifiedA, dataB, modifiedB);
         }
 
         /// <summary>
@@ -159,7 +161,6 @@ namespace my.Utilities.Diff
             return codes;
         }
 
-
         /// <summary>
         /// This is the algorithm to find the Shortest Middle Snake (SMS).
         /// </summary>
@@ -171,9 +172,9 @@ namespace my.Utilities.Diff
         /// <param name="upperB">upper bound of the actual range in DataB (exclusive)</param>
         /// <param name="downVector">a vector for the (0,0) to (x,y) search. Passed as a parameter for speed reasons.</param>
         /// <param name="upVector">a vector for the (u,v) to (N,M) search. Passed as a parameter for speed reasons.</param>
-        /// <returns>a MiddleSnakeData record containing x,y and u,v</returns>
-        static (int X, int Y) SMS(DiffData dataA, int lowerA, int upperA,
-                                  DiffData dataB, int lowerB, int upperB,
+        /// <returns>a tuple containing x,y</returns>
+        static (int X, int Y) SMS(int[] dataA, int lowerA, int upperA,
+                                  int[] dataB, int lowerB, int upperB,
                                   int[] downVector, int[] upVector)
         {
             int max = dataA.Length + dataB.Length + 1;
@@ -218,7 +219,7 @@ namespace my.Utilities.Diff
                     int y = x - k;
 
                     // find the end of the furthest reaching forward D-path in diagonal k.
-                    while ((x < upperA) && (y < upperB) && (dataA.Data[x] == dataB.Data[y]))
+                    while ((x < upperA) && (y < upperB) && (dataA[x] == dataB[y]))
                     {
                         x++;
                         y++;
@@ -258,7 +259,7 @@ namespace my.Utilities.Diff
                     }
                     int y = x - k;
 
-                    while ((x > lowerA) && (y > lowerB) && (dataA.Data[x - 1] == dataB.Data[y - 1]))
+                    while ((x > lowerA) && (y > lowerB) && (dataA[x - 1] == dataB[y - 1]))
                     {
                         x--;
                         y--;
@@ -283,7 +284,6 @@ namespace my.Utilities.Diff
             throw new System.ApplicationException("the algorithm should never come here.");
         }
 
-
         /// <summary>
         /// This is the divide-and-conquer implementation of the longes common-subsequence (LCS) 
         /// algorithm.
@@ -298,21 +298,21 @@ namespace my.Utilities.Diff
         /// <param name="upperB">upper bound of the actual range in DataB (exclusive)</param>
         /// <param name="downVector">a vector for the (0,0) to (x,y) search. Passed as a parameter for speed reasons.</param>
         /// <param name="upVector">a vector for the (u,v) to (N,M) search. Passed as a parameter for speed reasons.</param>
-        static void LCS(DiffData dataA, int lowerA, int upperA,
-                        DiffData dataB, int lowerB, int upperB,
+        static void LCS(int[] dataA, int lowerA, int upperA, bool[] modifiedA,
+                        int[] dataB, int lowerB, int upperB, bool[] modifiedB,
                         int[] downVector, int[] upVector)
         {
             // Debug.Write(2, "LCS", String.Format("Analyse the box: A[{0}-{1}] to B[{2}-{3}]", LowerA, UpperA, LowerB, UpperB));
 
             // Fast walkthrough equal lines at the start
-            while (lowerA < upperA && lowerB < upperB && dataA.Data[lowerA] == dataB.Data[lowerB])
+            while (lowerA < upperA && lowerB < upperB && dataA[lowerA] == dataB[lowerB])
             {
                 lowerA++;
                 lowerB++;
             }
 
             // Fast walkthrough equal lines at the end
-            while (lowerA < upperA && lowerB < upperB && dataA.Data[upperA - 1] == dataB.Data[upperB - 1])
+            while (lowerA < upperA && lowerB < upperB && dataA[upperA - 1] == dataB[upperB - 1])
             {
                 --upperA;
                 --upperB;
@@ -322,13 +322,13 @@ namespace my.Utilities.Diff
             {
                 // mark as inserted lines.
                 while (lowerB < upperB)
-                    dataB.Modified[lowerB++] = true;
+                    modifiedB[lowerB++] = true;
             }
             else if (lowerB == upperB)
             {
                 // mark as deleted lines.
                 while (lowerA < upperA)
-                    dataA.Modified[lowerA++] = true;
+                    modifiedA[lowerA++] = true;
             }
             else
             {
@@ -337,24 +337,23 @@ namespace my.Utilities.Diff
                 // Debug.Write(2, "MiddleSnakeData", String.Format("{0},{1}", smsrd.x, smsrd.y));
 
                 // The path is from LowerX to (x,y) and (x,y) to UpperX
-                LCS(dataA, lowerA, x, dataB, lowerB, y, downVector, upVector);
-                LCS(dataA, x, upperA, dataB, y, upperB, downVector, upVector);  // 2002.09.20: no need for 2 points 
+                LCS(dataA, lowerA, x, modifiedA, dataB, lowerB, y, modifiedB, downVector, upVector);
+                LCS(dataA, x, upperA, modifiedA, dataB, y, upperB, modifiedB, downVector, upVector);  // 2002.09.20: no need for 2 points 
             }
         }
-
 
         /// <summary>Scan the tables of which lines are inserted and deleted,
         /// producing an edit script in forward order.  
         /// </summary>
-        // dynamic array
-        static IEnumerable<Item> CreateDiffs(DiffData dataA, DiffData dataB)
+        static IEnumerable<Item> CreateDiffs(int[] dataA, bool[] modifiedA,
+                                             int[] dataB, bool[] modifiedB)
         {
             int lineA = 0;
             int lineB = 0;
             while (lineA < dataA.Length || lineB < dataB.Length)
             {
-                if ((lineA < dataA.Length) && (!dataA.Modified[lineA])
-                    && (lineB < dataB.Length) && (!dataB.Modified[lineB]))
+                if ((lineA < dataA.Length) && (!modifiedA[lineA])
+                    && (lineB < dataB.Length) && (!modifiedB[lineB]))
                 {
                     // equal lines
                     lineA++;
@@ -367,11 +366,11 @@ namespace my.Utilities.Diff
                     int startB = lineB;
 
                     // while (LineA < DataA.Length && DataA.modified[LineA])
-                    while (lineA < dataA.Length && (lineB >= dataB.Length || dataA.Modified[lineA]))
+                    while (lineA < dataA.Length && (lineB >= dataB.Length || modifiedA[lineA]))
                         lineA++;
 
                     // while (LineB < DataB.Length && DataB.modified[LineB])
-                    while (lineB < dataB.Length && (lineA >= dataA.Length || dataB.Modified[lineB]))
+                    while (lineB < dataB.Length && (lineA >= dataA.Length || modifiedB[lineB]))
                         lineB++;
 
                     if ((startA < lineA) || (startB < lineB))
@@ -386,34 +385,6 @@ namespace my.Utilities.Diff
                     }
                 }
             }
-        }
-    }
-
-    /// <summary>Data on one input file being compared.  
-    /// </summary>
-    class DiffData
-    {
-        /// <summary>Number of elements (lines).</summary>
-        public int Length => Data.Length;
-
-        /// <summary>Buffer of numbers that will be compared.</summary>
-        public int[] Data;
-
-        /// <summary>
-        /// Array of booleans that flag for modified data.
-        /// This is the result of the diff.
-        /// This means deletedA in the first Data or inserted in the second Data.
-        /// </summary>
-        public bool[] Modified;
-
-        /// <summary>
-        /// Initialize the Diff-Data buffer.
-        /// </summary>
-        /// <param name="data">reference to the buffer</param>
-        public DiffData(int[] initData)
-        {
-            Data = initData;
-            Modified = new bool[Length + 2];
         }
     }
 }
