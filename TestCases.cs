@@ -23,7 +23,7 @@ void TestHelper(string testName, string a, string b, string expect)
 
     StringBuilder ret = new StringBuilder();
     for (int n = 0; n < f.Length; n++)
-        ret.Append(f[n].DeletedACount.ToString() + "." + f[n].DeletedBCount.ToString() + "." + f[n].StartLineA.ToString() + "." + f[n].StartLineB.ToString() + "*");
+        ret.Append($"{f[n].DeletedACount}.{f[n].DeletedBCount}.{f[n].StartLineA}.{f[n].StartLineB}*");
 
     if (verboseMode)
         Console.WriteLine($"  result={ret}");
