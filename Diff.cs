@@ -4,7 +4,7 @@
 
 namespace my.Utilities.Diff
 {
-    using System.Collections;
+    using System.Collections.Generic;
     using System.Text.RegularExpressions;
 
     /// <summary>
@@ -55,7 +55,7 @@ namespace my.Utilities.Diff
         /// <returns>Returns a array of Items that describe the differences.</returns>
         public static IEnumerable<Item> DiffText(string textA, string textB, bool trimSpace, bool ignoreSpace, bool ignoreCase)
         {
-            var h = new Hashtable(textA.Length + textB.Length);
+            var h = new Dictionary<string, int>(textA.Length + textB.Length);
             var dataA = new DiffData(DiffCodes(textA, h, trimSpace, ignoreSpace, ignoreCase));
             var dataB = new DiffData(DiffCodes(textB, h, trimSpace, ignoreSpace, ignoreCase));
             h.Clear();
@@ -130,7 +130,7 @@ namespace my.Utilities.Diff
         /// <param name="h">This extern initialized hashtable is used for storing all ever used textlines.</param>
         /// <param name="trimSpace">ignore leading and trailing space characters</param>
         /// <returns>a array of integers.</returns>
-        private static int[] DiffCodes(string aText, Hashtable h, bool trimSpace, bool ignoreSpace, bool ignoreCase)
+        private static int[] DiffCodes(string aText, Dictionary<string, int> h, bool trimSpace, bool ignoreSpace, bool ignoreCase)
         {
             // strip off all cr, only use lf as textline separator.
             aText = aText.Replace("\r", "");
@@ -150,7 +150,7 @@ namespace my.Utilities.Diff
                 if (ignoreCase)
                     s = s.ToLower();
 
-                if (!h.Contains(s))
+                if (!h.ContainsKey(s))
                 {
                     lastUsedCode++;
                     h[s] = lastUsedCode;
@@ -158,7 +158,7 @@ namespace my.Utilities.Diff
                 }
                 else
                 {
-                    codes[i] = (int)(h[s]!);
+                    codes[i] = h[s];
                 }
             }
             return codes;
