@@ -5,6 +5,7 @@
 namespace my.Utilities.Diff
 {
     using System.Collections.Generic;
+    using System.Runtime.CompilerServices;
     using System.Text.RegularExpressions;
 
     /// <summary>
@@ -15,7 +16,7 @@ namespace my.Utilities.Diff
     /// See [documentation](docu.md) for more details and change log.
     /// </summary>
 
-    public class Diff
+    public partial class Diff
     {
         public struct Item
         {
@@ -51,9 +52,9 @@ namespace my.Utilities.Diff
         public static IEnumerable<Item> DiffText(string textA, string textB, bool trimSpace, bool ignoreSpace, bool ignoreCase)
         {
             var h = new Dictionary<string, int>(textA.Length + textB.Length);
-            var dataA = DiffCodes(textA, h, trimSpace, ignoreSpace, ignoreCase);
+            var dataA = DiffCodes(textA, h, trimSpace, ignoreSpace, ignoreCase).ToArray();
             var modifiedA = new bool[dataA.Length + 2];
-            var dataB = DiffCodes(textB, h, trimSpace, ignoreSpace, ignoreCase);
+            var dataB = DiffCodes(textB, h, trimSpace, ignoreSpace, ignoreCase).ToArray();
             var modifiedB = new bool[dataB.Length + 2];
             h.Clear();
 
@@ -127,38 +128,32 @@ namespace my.Utilities.Diff
         /// <param name="h">This extern initialized hashtable is used for storing all ever used textlines.</param>
         /// <param name="trimSpace">ignore leading and trailing space characters</param>
         /// <returns>a array of integers.</returns>
-        static int[] DiffCodes(string aText, Dictionary<string, int> h, bool trimSpace, bool ignoreSpace, bool ignoreCase)
+        static IEnumerable<int> DiffCodes(string aText, Dictionary<string, int> h, bool trimSpace, bool ignoreSpace, bool ignoreCase)
         {
             // strip off all cr, only use lf as textline separator.
             aText = aText.Replace("\r", "");
-            var lines = aText.Split('\n');
-            var codes = new int[lines.Length];
+            IEnumerable<string> lines = new List<string>(aText.Split('\n'));
+            if (trimSpace)
+                lines = lines.Select(l => l.Trim());
+            if (ignoreSpace)
+                lines = lines.Select(l => MyRegex().Replace(l, " "));
+            if (ignoreSpace)
+                lines = lines.Select(l => l.ToLowerInvariant());
 
             int lastUsedCode = h.Count;
-            for (int i = 0; i < lines.Length; ++i)
+            foreach (string s in lines)
             {
-                string s = lines[i];
-                if (trimSpace)
-                    s = s.Trim();
-
-                if (ignoreSpace)
-                    s = Regex.Replace(s, "\\s+", " ");    // TODO: optimization: faster blank removal.
-
-                if (ignoreCase)
-                    s = s.ToLower();
-
-                if (!h.ContainsKey(s))
+                if (h.TryGetValue(s, out int code))
                 {
-                    lastUsedCode++;
-                    h[s] = lastUsedCode;
-                    codes[i] = lastUsedCode;
+                    yield return code;
                 }
                 else
                 {
-                    codes[i] = h[s];
+                    lastUsedCode++;
+                    h.Add(s, lastUsedCode);
+                    yield return lastUsedCode;
                 }
             }
-            return codes;
         }
 
         /// <summary>
@@ -386,5 +381,8 @@ namespace my.Utilities.Diff
                 }
             }
         }
+
+        [GeneratedRegex("\\s+")]
+        private static partial Regex MyRegex();
     }
 }
