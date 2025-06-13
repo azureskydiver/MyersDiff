@@ -130,9 +130,7 @@ namespace my.Utilities.Diff
         /// <returns>a array of integers.</returns>
         static IEnumerable<int> DiffCodes(string aText, Dictionary<string, int> h, bool trimSpace, bool ignoreSpace, bool ignoreCase)
         {
-            // strip off all cr, only use lf as textline separator.
-            aText = aText.Replace("\r", "");
-            IEnumerable<string> lines = new List<string>(aText.Split('\n'));
+            var lines = SplitLines();
             if (trimSpace)
                 lines = lines.Select(l => l.Trim());
             if (ignoreSpace)
@@ -141,18 +139,22 @@ namespace my.Utilities.Diff
                 lines = lines.Select(l => l.ToLowerInvariant());
 
             int lastUsedCode = h.Count;
-            foreach (string s in lines)
-            {
-                if (h.TryGetValue(s, out int code))
-                {
-                    yield return code;
-                }
-                else
-                {
+            return lines.Select(s =>
+                { 
+                    if (h.TryGetValue(s, out int code))
+                        return code;
+
                     lastUsedCode++;
                     h.Add(s, lastUsedCode);
-                    yield return lastUsedCode;
-                }
+                    return lastUsedCode;
+                });
+
+            IEnumerable<string> SplitLines()
+            {
+                // strip off all cr, only use lf as textline separator.
+                aText = aText.Replace("\r", "");
+                foreach (var line in aText.Split('\n'))
+                    yield return line;
             }
         }
 
