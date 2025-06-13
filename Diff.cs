@@ -28,15 +28,6 @@ namespace my.Utilities.Diff
         }
 
         /// <summary>
-        /// Find the difference in 2 texts, comparing by textlines.
-        /// </summary>
-        /// <param name="textA">A-version of the text (usually the old one)</param>
-        /// <param name="textB">B-version of the text (usually the new one)</param>
-        /// <returns>Returns a array of Items that describe the differences.</returns>
-        public IEnumerable<Item> DiffText(string textA, string textB)
-            => DiffText(textA, textB, false, false, false);
-
-        /// <summary>
         /// Find the difference in 2 text documents, comparing by textlines.
         /// The algorithm itself is comparing 2 arrays of numbers so when comparing 2 text documents
         /// each line is converted into a (hash) number. This hash-value is computed by storing all
@@ -49,7 +40,8 @@ namespace my.Utilities.Diff
         /// <param name="ignoreSpace">When set to true, all whitespace characters are converted to a single space character before the comparision is done.</param>
         /// <param name="ignoreCase">When set to true, all characters are converted to their lowercase equivalence before the comparision is done.</param>
         /// <returns>Returns a array of Items that describe the differences.</returns>
-        public static IEnumerable<Item> DiffText(string textA, string textB, bool trimSpace, bool ignoreSpace, bool ignoreCase)
+        public static IEnumerable<Item> DiffText(string textA, string textB,
+                                                 bool trimSpace = false, bool ignoreSpace = false, bool ignoreCase = false)
         {
             var h = new Dictionary<string, int>(textA.Length + textB.Length);
             var dataA = DiffCodes(textA, h, trimSpace, ignoreSpace, ignoreCase).ToArray();
@@ -78,14 +70,13 @@ namespace my.Utilities.Diff
         /// <param name="data">A Diff data buffer containing the identified changes.</param>
         static void Optimize(int[] data, bool [] modified)
         {
-            int startPos, endPos;
-
-            startPos = 0;
+            int startPos = 0;
             while (startPos < data.Length)
             {
                 while ((startPos < data.Length) && (modified[startPos] == false))
                     startPos++;
-                endPos = startPos;
+
+                int endPos = startPos;
                 while ((endPos < data.Length) && (modified[endPos] == true))
                     endPos++;
 
@@ -135,7 +126,7 @@ namespace my.Utilities.Diff
                 lines = lines.Select(l => l.Trim());
             if (ignoreSpace)
                 lines = lines.Select(l => MyRegex().Replace(l, " "));
-            if (ignoreSpace)
+            if (ignoreCase)
                 lines = lines.Select(l => l.ToLowerInvariant());
 
             int lastUsedCode = h.Count;
