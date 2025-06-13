@@ -45,14 +45,14 @@ namespace my.Utilities.Diff
         {
             var h = new Dictionary<string, int>(textA.Length + textB.Length);
             var dataA = DiffCodes(textA, h, trimSpace, ignoreSpace, ignoreCase).ToArray();
-            var modifiedA = new bool[dataA.Length + 2];
+            var modifiedA = new bool[dataA.Length];
             var dataB = DiffCodes(textB, h, trimSpace, ignoreSpace, ignoreCase).ToArray();
-            var modifiedB = new bool[dataB.Length + 2];
+            var modifiedB = new bool[dataB.Length];
             h.Clear();
 
             int max = dataA.Length + dataB.Length + 1;
-            var downVector = new int[2 * max + 2];
-            var upVector = new int[2 * max + 2];
+            var downVector = new int[2 * max];
+            var upVector = new int[2 * max];
 
             LCS(dataA, 0, dataA.Length, modifiedA, dataB, 0, dataB.Length, modifiedB, downVector, upVector);
 
@@ -100,12 +100,12 @@ namespace my.Utilities.Diff
         /// <returns>Returns Items that describe the differences.</returns>
         public static IEnumerable<Item> DiffInt(int[] dataA, int[] dataB)
         {
-            var modifiedA = new bool[dataA.Length + 2];
-            var modifiedB = new bool[dataB.Length + 2];
+            var modifiedA = new bool[dataA.Length];
+            var modifiedB = new bool[dataB.Length];
  
             int max = dataA.Length + dataB.Length + 1;
-            var downVector = new int[2 * max + 2];
-            var upVector = new int[2 * max + 2];
+            var downVector = new int[2 * max];
+            var upVector = new int[2 * max];
 
             LCS(dataA, 0, dataA.Length, modifiedA, dataB, 0, dataB.Length, modifiedB, downVector, upVector);
             return CreateDiffs(dataA, modifiedA, dataB, modifiedB);
